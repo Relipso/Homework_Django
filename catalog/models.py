@@ -11,7 +11,7 @@ class Product(models.Model):
         verbose_name="Описание", help_text="Введите описание"
     )
     preview = models.ImageField(
-        upload_to="product/photo",
+        upload_to="media",
         blank=True,
         null=True,
         verbose_name="Изображение (превью)",
