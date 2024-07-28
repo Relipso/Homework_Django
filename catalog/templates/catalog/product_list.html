@@ -1,10 +1,10 @@
-{% extends 'home.html' %}
+{% extends 'catalog/catalog_list.html' %}
 {% load my_tags %}
 {% block content %}
 <div class="album py-5 bg-light">
     <div class="container">
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
-            {% for product in products %}
+            {% for product in object_list %}
             <div class="col">
                 <div class="card shadow-sm">
                     <img src="{{ product.preview | media_filter }}">
@@ -15,7 +15,7 @@
                             <div class="btn-group">
                                 <p class="card-text">{{ product.price }}</p>
                             </div>
-                            <a class="btn btn-primary" href="{% url 'catalog:product_detail' product.pk %}"
+                            <a class="btn btn-primary" href="{% url 'catalog:catalog_detail' product.pk %}"
                                role="button">Подробнее</a>
                         </div>
                     </div>
