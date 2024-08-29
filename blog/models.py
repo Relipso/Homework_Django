@@ -1,36 +1,48 @@
 from django.db import models
 
+NULLABLE = {"blank": True, "null": True}
+
 
 class Blog(models.Model):
-    name = models.CharField(
-        max_length=100, verbose_name="Заголовок", help_text="Введите заголовок"
+    title = models.CharField(
+        max_length=50,
+        verbose_name="Заголовок",
+        help_text="Введите заголовок",
+        **NULLABLE,
     )
     slug = models.CharField(
-        max_length=50, verbose_name="Ссылка", help_text="Введите ссылку"
+        max_length=150,
+        verbose_name="Идентификатор",
+        **NULLABLE,
     )
-    description = models.TextField(
-        verbose_name="Содержимое", help_text="Введите содержимое", blank=True, null=True
+    content = models.TextField(
+        verbose_name="Содержимое",
+        help_text="Введите содержимое",
+        **NULLABLE,
     )
-    photo = models.ImageField(
-        upload_to="product/photo",
-        blank=True,
-        null=True,
+    image = models.ImageField(
+        upload_to="products/photo",
         verbose_name="Изображение",
         help_text="Загрузите изображение",
+        **NULLABLE,
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-    is_published = models.BooleanField(
-        default=False, verbose_name="Опубликовано", help_text="Опубликовать запись"
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата создания",
     )
-    views = models.PositiveIntegerField(
+    is_publication = models.BooleanField(
+        verbose_name="Создать?",
+        default=False,
+    )
+    count_views = models.IntegerField(
         default=0,
         verbose_name="Количество просмотров",
         help_text="Укажите количество просмотров",
     )
 
-    def __str__(self):
-        return self.name
-
     class Meta:
-        verbose_name = "Запись"
-        verbose_name_plural = "Записи"
+        verbose_name = "Блог"
+        verbose_name_plural = "Блоги"
+
+    def __str__(self):
+        return self.title or f"Blog {self.id}"

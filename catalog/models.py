@@ -1,5 +1,7 @@
 from django.db import models
 
+NULLABLE = {"blank": True, "null": True}
+
 
 class Product(models.Model):
     name = models.CharField(
@@ -62,3 +64,36 @@ class Category(models.Model):
         verbose_name = "Категория"
         verbose_name_plural = "Категории"
         ordering = ["name"]
+
+
+class Version(models.Model):
+    product = models.ForeignKey(
+        Product,
+        verbose_name="Наименование продукта",
+        related_name="version",
+        on_delete=models.SET_NULL,
+        **NULLABLE,
+    )
+    version_number = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Номер версии продукта",
+        help_text="Введите номер версии продукта",
+        **NULLABLE,
+    )
+    version_name = models.CharField(
+        max_length=50,
+        verbose_name="Наименование версии продукта",
+        help_text="Введите наименование версии продукта",
+        **NULLABLE,
+    )
+    version_sign = models.BooleanField(
+        verbose_name="признак текущей версии", help_text="Версия активна?", default=True
+    )
+
+    class Meta:
+        verbose_name = "Версия"
+        verbose_name_plural = "Версии"
+        ordering = ["product", "version_number", "version_name"]
+
+    def __str__(self):
+        return self.version_name
