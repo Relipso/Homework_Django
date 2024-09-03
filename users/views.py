@@ -12,6 +12,7 @@ from users.forms import UserRegisterForm, UserProfileForm
 from users.models import User
 from config.settings import EMAIL_HOST_USER
 from django.contrib.auth import logout
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 class RegisterView(CreateView):
@@ -76,7 +77,7 @@ class PasswordResetView(View):
         return render(request, self.template_name, {"form": form})
 
 
-class ProfileView(UpdateView):
+class ProfileView(LoginRequiredMixin, UpdateView):
     model = User
     form_class = UserProfileForm
     template_name = "users/profile.html"

@@ -1,10 +1,35 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.forms import inlineformset_factory
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 from catalog.forms import ProductForm, VersionForm
 from catalog.models import Product, Version
+from django.contrib.auth.decorators import permission_required
+from django.core.exceptions import PermissionDenied
+
+
+class ModeratorProductUpdateView(PermissionRequiredMixin, UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'catalog/moderator_product_update.html'
+    success_url = reverse_lazy('catalog:products_list')
+    permission_required = ('catalog.can_change_product_description', 'catalog.can_change_product_category')
+
+    def form_valid(self, form):
+        if self.request.user.has_perm('catalog.can_change_product_description'):
+            form.instance.description = form.cleaned_data['description']
+        if self.request.user.has_perm('catalog.can_change_product_category'):
+            form.instance.category = form.cleaned_data['category']
+        return super().form_valid(form)
+
+
+@permission_required('catalog.can_unpublish_product')
+def unpublish_product(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    product.is_published = False
+    product.save()
+    return redirect('catalog:products_list')
 
 
 class ProductListView(LoginRequiredMixin, ListView):
@@ -18,6 +43,10 @@ class ProductListView(LoginRequiredMixin, ListView):
                 product.active_version = active_version.last().version_name
             else:
                 product.active_version = 'Отсутствует'
+
+            product.can_unpublish = self.request.user.has_perm('catalog.can_unpublish_product')
+            product.can_edit_as_moderator = self.request.user.has_perm('catalog.can_change_product_description') or \
+                                            self.request.user.has_perm('catalog.can_change_product_category')
         return context_data
 
 
@@ -40,25 +69,35 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ProductForm
     success_url = reverse_lazy('catalog:products_list')
 
-    def get_context_data(self, *args, **kwargs):
-        context_data = super().get_context_data(**kwargs)
-        ProductFormset = inlineformset_factory(Product, Version, VersionForm, extra=1)
-        if self.request.method == 'POST':
-            context_data['formset'] = ProductFormset(self.request.POST, instance=self.object)
-        else:
-            context_data['formset'] = ProductFormset(instance=self.object)
-        return context_data
+    def dispatch(self, request, *args, **kwargs):
+        if not (request.user == self.get_object().owner or
+                request.user.has_perm('catalog.can_change_product_description') or
+                request.user.has_perm('catalog.can_change_product_category')):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        context_data = self.get_context_data()
-        formset = context_data['formset']
-        if form.is_valid() and formset.is_valid():
-            self.object = form.save()
-            formset.instance = self.object
-            formset.save()
+        if self.request.user == self.object.owner:
+            # Владелец может изменять все поля
             return super().form_valid(form)
         else:
-            return self.render_to_response(self.get_context_data(form=form, formset=formset))
+            # Модератор может изменять только определенные поля
+            if self.request.user.has_perm('catalog.can_change_product_description'):
+                self.object.description = form.cleaned_data['description']
+            if self.request.user.has_perm('catalog.can_change_product_category'):
+                self.object.category = form.cleaned_data['category']
+            self.object.save()
+            return redirect(self.get_success_url())
+
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        if self.request.user == self.object.owner:
+            ProductFormset = inlineformset_factory(Product, Version, VersionForm, extra=1)
+            if self.request.method == 'POST':
+                context_data['formset'] = ProductFormset(self.request.POST, instance=self.object)
+            else:
+                context_data['formset'] = ProductFormset(instance=self.object)
+        return context_data
 
 
 class ProductDeleteView(LoginRequiredMixin, DeleteView):

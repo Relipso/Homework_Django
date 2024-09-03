@@ -18,17 +18,25 @@
                         <p class="card-text">Категория: {{ product.category }}</p>
                         <p class="card-text">Стоимость: {{ product.price }} руб.</p>
                         <p class="card-text">Владелец Email: {{ product.owner.email|default:"Не указан" }}</p>
+                        <p class="card-text">Статус: {% if product.is_published %}Опубликован{% else %}Не опубликован{% endif %}</p>
                         <div class="btn-group">
                             <a class="btn btn-sm btn-outline-secondary"
                                href="{% url 'catalog:products_detail' product.pk %}"
                                role="button">Подробно</a>
-                            {% if request.user == product.owner %}
+                            {% if request.user == product.owner or perms.catalog.can_change_product_description or perms.catalog.can_change_product_category %}
                             <a class="btn btn-sm btn-outline-secondary"
                                href="{% url 'catalog:products_update' product.pk %}"
                                role="button">Изменить</a>
+                            {% endif %}
+                            {% if request.user == product.owner %}
                             <a class="btn btn-sm btn-outline-danger"
                                href="{% url 'catalog:products_delete' product.pk %}"
                                role="button">Удалить</a>
+                            {% endif %}
+                            {% if perms.catalog.can_unpublish_product and product.is_published %}
+                            <a class="btn btn-sm btn-outline-warning"
+                               href="{% url 'catalog:unpublish_product' product.pk %}"
+                               role="button">Отменить публикацию</a>
                             {% endif %}
                         </div>
                     </div>
