@@ -1,0 +1,25 @@
+{% extends 'catalog/base.html' %}
+{% block content %}
+<div class="album py-5 bg-light">
+    <div class="container">
+        <h2 class="mb-4">Список категорий</h2>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+            {% for category in categories %}
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ category.name }}</h5>
+                        <p class="card-text">Описание: {{ category.description }}</p>
+                        <p class="card-text">Дата создания: {{ category.created_at }}</p>
+                        <p class="card-text">Дата обновления: {{ category.updated_at }}</p>
+                        <a href="{% url 'catalog:products_list' %}?category={{ category.id }}" class="btn btn-sm btn-outline-secondary">Посмотреть продукты</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p>Категории отсутствуют.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -4,9 +4,11 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 from catalog.forms import ProductForm, VersionForm
-from catalog.models import Product, Version
+from catalog.models import Product, Version, Category
 from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import PermissionDenied
+from django.views.generic import ListView
+from .services import get_categories
 
 
 class ModeratorProductUpdateView(PermissionRequiredMixin, UpdateView):
@@ -122,3 +124,12 @@ class ContactsPageView(TemplateView):
                 f"{name} написал следующее сообщение: {message}, контактный телефон: {phone}"
             )
         return render(request, "catalog/contacts.html")
+
+
+class CategoryListView(ListView):
+    model = Category
+    template_name = 'catalog/categories_list.html'
+    context_object_name = 'categories'
+
+    def get_queryset(self):
+        return get_categories()
